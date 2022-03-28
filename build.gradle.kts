@@ -19,7 +19,9 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api:2.15.0")
     implementation("org.apache.logging.log4j:log4j-core:2.15.0")
 
+    // Additional Kotlin libraries required for some features
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
 }
 
 tasks.test {

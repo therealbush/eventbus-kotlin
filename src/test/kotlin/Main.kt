@@ -1,26 +1,58 @@
 import me.bush.illnamethislater.*
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.config.Configurator
 
 /**
  * @author bush
- * @since 3/13/2022
+ * @since 1.0.0
  */
 fun main() {
-    EventBus().run {
+    Configurator.setRootLevel(Level.INFO)
 
-        subscribe(Subscriber())
+//    EventBus().run {
+//
+//        subscribe(Subscriber())
+//
+//        post("String")
+//
+//        val key = register(listener<Int> {
+//            println(it)
+//        })
+//
+//        val topLevelListenerKey = register(topLevelListener())
+//
+//        unsubscribe(key)
+//
+//        unsubscribe(topLevelListenerKey)
+//
+//        debugInfo()
+//    }
 
-        post("Object()")
+    val not = NotDuck()
+    not.wtf()
+    doDuck(not)
+    //doDuck(Any())
+}
 
-        register(listener<String> {
-            println("it")
-        })
+fun topLevelListener() = listener<Int> { println("topLevelListener(): $it") }
+
+class Subscriber {
+
+    val listener0 get() = listener<String>(500, true, false) {
+        println(it.uppercase())
     }
 }
 
-class Subscriber {
-// clean up and writr tests
-    @EventListener
-    fun onDeez() = listener(listener =  { e: String ->
-        println(e.uppercase())
-    }, receiveCancelled = false, )
+fun doDuck(any: Any) {
+}
+
+class NotDuck {
+    fun wtf() {
+        println("wtf")
+    }
+}
+
+interface Duck {
+    fun wtf()
 }

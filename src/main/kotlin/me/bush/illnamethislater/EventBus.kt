@@ -2,81 +2,84 @@ package me.bush.illnamethislater
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KClass
-import kotlin.reflect.full.findAnnotation
 
 /**
+ * [A simple event dispatcher](http://github.com/therealbush/eventbus-kotlin)
+ *
  * @author bush
- * @since 3/13/2022
+ * @since 1.0.0
  */
-class EventBus(private val logger: Logger = LogManager.getLogger(), private val strict: Boolean = true) {
-    private val listeners = hashMapOf<KClass<*>, MutableList<Listener>>()
-    private val subscribers = hashSetOf<Any>()
-
-    // TODO: 3/26/2022 coroutine shit idk
+class EventBus(private val logger: Logger = LogManager.getLogger()) {
+    private val listeners = hashMapOf<KClass<*>, ListenerList>()
+    private val subscribers = mutableSetOf<Any>()
 
     /**
      * blah blah annotation properties override listener properties
      */
-    fun subscribe(subscriber: Any) {
-        if (subscribers.add(subscriber)) {
-            subscriber::class.allMembers.filterReturnType<Listener>().forEach { property ->
-                register(property.handleCall(subscriber).apply {
-                    // If the annotation is present, update listener settings from it
-                    // If it is not, and we are in strict mode, continue to the next property
-                    property.findAnnotation<EventListener>()?.let {
-                        priority = it.priority
-                        receiveCancelled = it.receiveCancelled
-                    } ?: if (strict) return@forEach
-                }, subscriber)
+    infix fun subscribe(subscriber: Any): Boolean {
+        return if (subscriber in subscribers) false
+        else runCatching {
+            subscriber::class.listeners.forEach {
+                register(it.handleCall(subscriber), subscriber)
             }
+            true
+        }.getOrElse {
+            logger.error("Unable to register listeners for subscriber $subscriber", it)
+            false
         }
     }
 
     /**
+     * Registers a listener (which may not belong to any subscriber) to this [EventBus]. If no object
+     * is given, a key will be returned which can be used in [unsubscribe] to remove the listener.
      *
+     * The
      */
-    fun register(listener: Listener, subscriber: Any = ListenerKey()): Any {
-        putListener(listener.also { it.subscriber = subscriber })
+    fun register(listener: Listener, subscriber: Any = Any()): Any {
+        listeners.getOrPut(listener.type) { ListenerList() }
+            .add(listener.also { it.subscriber = subscriber })
+        subscribers += subscriber
         return subscriber
     }
 
     /**
-     * Puts a listener into its respective list and sorts the list.
-     */
-    private fun putListener(listener: Listener) {
-        listeners.getOrPut(listener.type) { mutableListOf() }.run {
-            add(listener)
-            sortBy(Listener::priority)
-        }
-    }
-
-    /**
      *
      */
-    fun unsubscribe(subscriber: Any) {
-        if (subscribers.remove(subscriber)) {
-            listeners.values.forEach { it.removeIf(subscriber::equals) }
+    // doc
+    infix fun unsubscribe(subscriber: Any) = subscribers.remove(subscriber).apply {
+        if (this) listeners.entries.removeIf {
+            it.value.removeFrom(subscriber)
+            it.value.isEmpty
         }
     }
 
     /**
-     * ur mom
+     * Posts an event.
      */
-    fun post(event: Any) = listeners[event::class].let { list ->
-        if (list == null || list.isEmpty()) false
-        else if (event is Event) {
-            list.forEach {
-                if (!event.cancelled || it.receiveCancelled) {
-                    it.listener(event)
-                }
+    // doc
+    infix fun post(event: Any) = listeners[event::class]?.post(event)
+
+    /**
+     * Logs the subscriber count, total listener count, and listener count
+     * for every event type with at least one subscriber to [logger].
+     * Per-event counts are sorted from greatest to least listeners.
+     * ```
+     * Subscribers: 5
+     * Listeners: 8 sequential, 4 parallel
+     * SomeInnerClass: 4, 2
+     * OtherEvent: 3, 1
+     * String: 1, 1
+     */
+    fun debugInfo() {
+        logger.info(StringBuilder().apply {
+            append("\nSubscribers: ${subscribers.size}")
+            val sequential = listeners.values.sumOf { it.sequential.size }
+            val parallel = listeners.values.sumOf { it.parallel.size }
+            append("\nListeners: $sequential sequential, $parallel parallel")
+            listeners.entries.sortedByDescending { it.value.sequential.size + it.value.parallel.size }.forEach {
+                append("\n${it.key.simpleName}: ${it.value.sequential.size}, ${it.value.parallel.size}")
             }
-            event.cancelled
-        } else {
-            list.forEach { it.listener(event) }
-            false
-        }
+        }.toString())
     }
 }
