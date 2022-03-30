@@ -10,12 +10,12 @@ import org.apache.logging.log4j.core.config.Configurator
 fun main() {
     Configurator.setRootLevel(Level.INFO)
 
-//    EventBus().run {
-//
-//        subscribe(Subscriber())
-//
-//        post("String")
-//
+    EventBus().run {
+
+        subscribe(Subscriber())
+
+        post(External())
+
 //        val key = register(listener<Int> {
 //            println(it)
 //        })
@@ -27,32 +27,40 @@ fun main() {
 //        unsubscribe(topLevelListenerKey)
 //
 //        debugInfo()
-//    }
+    }
 
-    val not = NotDuck()
-    not.wtf()
-    doDuck(not)
-    //doDuck(Any())
 }
 
-fun topLevelListener() = listener<Int> { println("topLevelListener(): $it") }
+fun topLevelListener() = listener<Int> {
+    println("topLevelListener(): $it")
+}
 
 class Subscriber {
 
-    val listener0 get() = listener<String>(500, true, false) {
-        println(it.uppercase())
+    val listener0 = listener<External>(500) {
+        println("listener 0")
+        println(it.canceled)
+        it.canceled = true
+    }
+
+    val listener1 = listener<External>(250, receiveCancelled = true) {
+        println("listener 1")
+        println(it.canceled)
+        it.canceled = false
+    }
+
+    val listener2 get() = listener<External> {
+        println("listener 2")
+        println(it.canceled)
+        it.canceled = true
+    }
+
+    fun listener3() = listener<External>(-250) {
+        println("listener 3")
+        println(it.canceled)
     }
 }
 
-fun doDuck(any: Any) {
-}
-
-class NotDuck {
-    fun wtf() {
-        println("wtf")
-    }
-}
-
-interface Duck {
-    fun wtf()
+class External {
+    var canceled = false
 }

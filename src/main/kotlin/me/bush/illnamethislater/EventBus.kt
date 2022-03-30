@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
  * @since 1.0.0
  */
 class EventBus(private val logger: Logger = LogManager.getLogger()) {
-    private val listeners = hashMapOf<KClass<*>, ListenerList>()
+    private val listeners = hashMapOf<KClass<*>, ListenerGroup>()
     private val subscribers = mutableSetOf<Any>()
 
     /**
@@ -37,8 +37,8 @@ class EventBus(private val logger: Logger = LogManager.getLogger()) {
      * The
      */
     fun register(listener: Listener, subscriber: Any = Any()): Any {
-        listeners.getOrPut(listener.type) { ListenerList() }
-            .add(listener.also { it.subscriber = subscriber })
+        listener.subscriber = subscriber
+        listeners.computeIfAbsent(listener.type, ::ListenerGroup).addListener(listener)
         subscribers += subscriber
         return subscriber
     }
@@ -58,7 +58,13 @@ class EventBus(private val logger: Logger = LogManager.getLogger()) {
      * Posts an event.
      */
     // doc
-    infix fun post(event: Any) = listeners[event::class]?.post(event)
+    infix fun post(event: Any) = listeners[event::class]?.let { group ->
+        group.sequential.forEach {
+            if (!group.cancelState.isCancelled(event) || it.receiveCancelled) {
+                it.listener(event)
+            }
+        }
+    }
 
     /**
      * Logs the subscriber count, total listener count, and listener count
@@ -71,15 +77,16 @@ class EventBus(private val logger: Logger = LogManager.getLogger()) {
      * OtherEvent: 3, 1
      * String: 1, 1
      */
+    // do lol
+
     fun debugInfo() {
         logger.info(StringBuilder().apply {
             append("\nSubscribers: ${subscribers.size}")
-            val sequential = listeners.values.sumOf { it.sequential.size }
-            val parallel = listeners.values.sumOf { it.parallel.size }
-            append("\nListeners: $sequential sequential, $parallel parallel")
+            append("\nListeners: ${listeners.values.sumOf { it.sequential.size }} sequential, ${listeners.values.sumOf { it.parallel.size }} parallel")
             listeners.entries.sortedByDescending { it.value.sequential.size + it.value.parallel.size }.forEach {
-                append("\n${it.key.simpleName}: ${it.value.sequential.size}, ${it.value.parallel.size}")
+                append("${it.key.simpleName}: ${it.value.sequential.size}, ${it.value.parallel.size}")
             }
         }.toString())
     }
 }
+
