@@ -4,18 +4,23 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import kotlin.reflect.KClass
 
+// TODO: 3/30/2022 Refactor some stuff
+
 /**
  * [A simple event dispatcher](http://github.com/therealbush/eventbus-kotlin)
  *
  * @author bush
  * @since 1.0.0
  */
-class EventBus(private val logger: Logger = LogManager.getLogger()) {
+class EventBus( // todo encapsulation??
+    internal val logger: Logger = LogManager.getLogger("EVENTBUS"),
+    internal val externalSupport: Boolean = true
+) {
     private val listeners = hashMapOf<KClass<*>, ListenerGroup>()
     private val subscribers = mutableSetOf<Any>()
 
     /**
-     * blah blah annotation properties override listener properties
+     * doc
      */
     infix fun subscribe(subscriber: Any): Boolean {
         return if (subscriber in subscribers) false
@@ -38,15 +43,15 @@ class EventBus(private val logger: Logger = LogManager.getLogger()) {
      */
     fun register(listener: Listener, subscriber: Any = Any()): Any {
         listener.subscriber = subscriber
-        listeners.computeIfAbsent(listener.type, ::ListenerGroup).addListener(listener)
+        listeners.computeIfAbsent(listener.type) { ListenerGroup(CancelledState.cancelStateOf(listener.type, this)) }
+            .addListener(listener)
         subscribers += subscriber
         return subscriber
     }
 
     /**
-     *
+     * doc
      */
-    // doc
     infix fun unsubscribe(subscriber: Any) = subscribers.remove(subscriber).apply {
         if (this) listeners.entries.removeIf {
             it.value.removeFrom(subscriber)
@@ -55,10 +60,10 @@ class EventBus(private val logger: Logger = LogManager.getLogger()) {
     }
 
     /**
-     * Posts an event.
+     * Posts an event. doc
      */
-    // doc
     infix fun post(event: Any) = listeners[event::class]?.let { group ->
+        // TODO: 3/30/2022 rewrite this all lol priority isn't even set up yet
         group.sequential.forEach {
             if (!group.cancelState.isCancelled(event) || it.receiveCancelled) {
                 it.listener(event)
