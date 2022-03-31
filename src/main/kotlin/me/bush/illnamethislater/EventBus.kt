@@ -51,6 +51,7 @@ class EventBus( // todo encapsulation??
 
     /**
      * doc
+     *
      */
     infix fun unsubscribe(subscriber: Any) = subscribers.remove(subscriber).apply {
         if (this) listeners.entries.removeIf {
