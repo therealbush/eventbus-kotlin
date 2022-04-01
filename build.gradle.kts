@@ -28,7 +28,6 @@ dependencies {
 
 tasks.test {
     testLogging {
-        exceptionFormat = FULL
         showStandardStreams = true
     }
     useJUnitPlatform()

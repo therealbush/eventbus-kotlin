@@ -6,6 +6,8 @@ import kotlin.reflect.KClass
  * This class is not intended to be used externally, use [listener] instead. You *could* use this,
  * and it would work fine however you would have to specify the type explicitly. (ew!)
  *
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+ *
  * @author bush
  * @since 1.0.0
  */
@@ -24,10 +26,18 @@ class Listener @PublishedApi internal constructor(
 }
 
 /**
- * doc later
+ * Creates a listener that can be held in a variable, returned from
+ * a function or getter, or directly registered to an Eventbus.
  *
- * @author bush
- * @since 1.0.0
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+ *
+ * @param T The type of event to listen for. Inheritance has no effect here.
+ * If [T] is a base class, subclass events will not be received.
+ * @param priority The priority of this listener. This can be any integer.
+ * Listeners with a higher [priority] will be invoked first.
+ * @param parallel If a listener should be invoked in parallel with other [parallel] listeners, or sequentially. todo finish parallel
+ * @param receiveCancelled If a listener should receive events that have been cancelled by previous listeners.
+ * @param listener The body of the listener that will be invoked.
  */
 inline fun <reified T : Any> listener(
     priority: Int = 0,

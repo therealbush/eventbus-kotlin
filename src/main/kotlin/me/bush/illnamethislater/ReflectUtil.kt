@@ -11,12 +11,11 @@ import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaGetter
 import kotlin.reflect.typeOf
 
+// by bush, unchanged since 1.0.0
+
 /**
  * Using [KClass.members] only returns public members, and using [KClass.declaredMembers]
  * doesn't return inherited members. This returns all members, private and inherited.
- *
- * @author bush
- * @since 1.0.0
  */
 internal val <T : Any> KClass<T>.allMembers
     get() = (declaredMembers + allSuperclasses.flatMap { it.declaredMembers }).asSequence()
@@ -24,9 +23,6 @@ internal val <T : Any> KClass<T>.allMembers
 /**
  * Checks if a [KCallable] is static on the jvm, and handles invocation accordingly.
  * I am not aware of a better alternative that works with `object` classes.
- *
- * @author bush
- * @since 1.0.0
  */
 internal fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
     isAccessible = true
@@ -38,19 +34,13 @@ internal fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
  * belonging to `object` classes are static, but their getters are not. If there is a getter (the property
  * is not private), we will be accessing that, otherwise we check if the field is static with Java reflection.
  * This also lets us support static listeners in Java code.
- *
- * @author bush
- * @since 1.0.0
  */
 internal val KCallable<*>.static
     get() = if (this !is KProperty<*> || javaGetter != null) false
     else javaField?.let { Modifier.isStatic(it.modifiers) } ?: false
 
 /**
- * Finds all listeners in a class. (properties and methods)
- *
- * @author bush
- * @since 1.0.0
+ * Finds all members of return type [Listener]. (properties and methods)
  */
 @Suppress("UNCHECKED_CAST") // This cannot fail
 internal inline val KClass<*>.listeners

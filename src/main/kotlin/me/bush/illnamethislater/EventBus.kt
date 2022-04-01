@@ -1,7 +1,5 @@
 package me.bush.illnamethislater
 
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
 import kotlin.reflect.KClass
 
 // TODO: 3/30/2022 Refactor some stuff
@@ -12,25 +10,29 @@ import kotlin.reflect.KClass
  * @author bush
  * @since 1.0.0
  */
-class EventBus( // todo encapsulation??
-    internal val logger: Logger = LogManager.getLogger("EVENTBUS"),
-    internal val externalSupport: Boolean = true
+class EventBus(
+    private val config: Config = Config()
 ) {
     private val listeners = hashMapOf<KClass<*>, ListenerGroup>()
     private val subscribers = mutableSetOf<Any>()
 
     /**
      * doc
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    infix fun subscribe(subscriber: Any): Boolean {
+    fun subscribe(subscriber: Any): Boolean {
         return if (subscriber in subscribers) false
         else runCatching {
-            subscriber::class.listeners.forEach {
-                register(it.handleCall(subscriber), subscriber)
+            subscriber::class.listeners.forEach { member ->
+                register(member.handleCall(subscriber).also {
+                    it.subscriber = subscriber
+                })
             }
+            subscribers += subscriber
             true
         }.getOrElse {
-            logger.error("Unable to register listeners for subscriber $subscriber", it)
+            config.logger.error("Unable to register listeners for subscriber $subscriber", it)
             false
         }
     }
@@ -39,60 +41,61 @@ class EventBus( // todo encapsulation??
      * Registers a listener (which may not belong to any subscriber) to this [EventBus]. If no object
      * is given, a key will be returned which can be used in [unsubscribe] to remove the listener.
      *
-     * The
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    fun register(listener: Listener, subscriber: Any = Any()): Any {
-        listener.subscriber = subscriber
-        listeners.computeIfAbsent(listener.type) { ListenerGroup(CancelledState.cancelStateOf(listener.type, this)) }
-            .addListener(listener)
-        subscribers += subscriber
-        return subscriber
+    fun register(listener: Listener): Listener {
+        listeners.computeIfAbsent(listener.type) {
+            ListenerGroup(it, config)
+        }.add(listener)
+        return listener
     }
 
     /**
      * doc
      *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    infix fun unsubscribe(subscriber: Any) = subscribers.remove(subscriber).apply {
-        if (this) listeners.entries.removeIf {
-            it.value.removeFrom(subscriber)
-            it.value.isEmpty
+    fun unsubscribe(subscriber: Any): Boolean {
+        return subscribers.remove(subscriber).also { contains ->
+            if (contains) listeners.entries.removeIf {
+                it.value.removeFrom(subscriber)
+                it.value.sequential.isEmpty() && it.value.parallel.isEmpty()
+            }
         }
     }
+
+    /**
+     * doc
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     */
+    fun unregister(listener: Listener) = listeners[listener.type]?.remove(listener) ?: false
 
     /**
      * Posts an event. doc
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    infix fun post(event: Any) = listeners[event::class]?.let { group ->
-        // TODO: 3/30/2022 rewrite this all lol priority isn't even set up yet
-        group.sequential.forEach {
-            if (!group.cancelState.isCancelled(event) || it.receiveCancelled) {
-                it.listener(event)
-            }
-        }
-    }
+    fun post(event: Any) = listeners[event::class]?.post(event) ?: false
 
     /**
-     * Logs the subscriber count, total listener count, and listener count
-     * for every event type with at least one subscriber to [logger].
-     * Per-event counts are sorted from greatest to least listeners.
+     * Logs the subscriber count, total listener count, and listener count for every event type with at
+     * least one subscriber to [Config.logger]. Per-event counts are sorted from greatest to least listeners.
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      * ```
      * Subscribers: 5
      * Listeners: 8 sequential, 4 parallel
-     * SomeInnerClass: 4, 2
+     * BushIsSoCool: 4, 2
      * OtherEvent: 3, 1
      * String: 1, 1
      */
-    // do lol
-
     fun debugInfo() {
-        logger.info(StringBuilder().apply {
-            append("\nSubscribers: ${subscribers.size}")
-            append("\nListeners: ${listeners.values.sumOf { it.sequential.size }} sequential, ${listeners.values.sumOf { it.parallel.size }} parallel")
-            listeners.entries.sortedByDescending { it.value.sequential.size + it.value.parallel.size }.forEach {
-                append("${it.key.simpleName}: ${it.value.sequential.size}, ${it.value.parallel.size}")
-            }
-        }.toString())
+        config.logger.info("Subscribers: ${subscribers.size}")
+        val sequential = listeners.values.sumOf { it.sequential.size }
+        val parallel = listeners.values.sumOf { it.parallel.size }
+        config.logger.info("Listeners: $sequential sequential, $parallel parallel")
+        listeners.values.sortedByDescending { it.sequential.size + it.parallel.size }.forEach { it.debugInfo() }
     }
 }
 
