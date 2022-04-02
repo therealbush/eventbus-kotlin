@@ -19,7 +19,7 @@ import kotlin.random.Random
  */
 @TestInstance(Lifecycle.PER_CLASS)
 class Test {
-    lateinit var eventBus: EventBus
+    private lateinit var eventBus: EventBus
     private val logger = LogManager.getLogger()
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ class Test {
         Assertions.assertEquals(random, primitiveTestValue)
     }
 
-    var primitiveTestValue = 0
+    private var primitiveTestValue = 0
 
     val primitiveListener = listener<Int> {
         primitiveTestValue = it
@@ -73,11 +73,11 @@ class Test {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Tests unsubscribing of "free" listeners which don't belong to a subscriber. todo allow keys to be resubscribed and test top level listeners
+    // Tests unsubscribing of listeners which don't belong to a subscriber.
     @Test
     fun freeListenerTest() {
-        // Register "free" listener, and keep the returned key
-        val key = eventBus.register(listener<String> {
+        // Register listener and keep the value
+        val listener = eventBus.register(listener<String> {
             freeListenerTestValue = it
         })
         val valueOne = "i love bush's eventbus <3"
@@ -86,14 +86,14 @@ class Test {
         eventBus.post(valueOne)
         Assertions.assertEquals(valueOne, freeListenerTestValue)
         // Remove the listener
-        eventBus.unsubscribe(key)
+        eventBus.unregister(listener)
         // No effect
         eventBus.post(valueTwo)
         // Value will not change
         Assertions.assertEquals(valueOne, freeListenerTestValue)
     }
 
-    var freeListenerTestValue: String? = null
+    private var freeListenerTestValue: String? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

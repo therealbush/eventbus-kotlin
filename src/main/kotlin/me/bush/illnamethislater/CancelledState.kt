@@ -1,7 +1,9 @@
 package me.bush.illnamethislater
 
 import sun.misc.Unsafe
+import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.isSubclassOf
@@ -22,8 +24,6 @@ internal fun interface CancelledState {
      */
     fun isCancelled(event: Any): Boolean
 
-    // Maybe move this to eventbus or util? todo
-    // Make CancelledState a class? todo
     companion object {
         private val UNSAFE = Unsafe::class.declaredMembers.single { it.name == "theUnsafe" }.handleCall() as Unsafe
         private val CANCELLED_NAMES = arrayOf("canceled", "cancelled")
@@ -33,19 +33,21 @@ internal fun interface CancelledState {
         /**
          * Creates a [CancelledState] object for events of class [type].
          */
-        // TODO: 3/31/2022 static/singleton fields
         fun of(type: KClass<*>, config: Config): CancelledState {
-            // Default impl for our event class
+            // Default impl for our event class.
             if (type.isSubclassOf(Event::class)) return CancelledState { (it as Event).cancelled }
-            // If compat is disabled
+            // If compat is disabled.
             if (!config.thirdPartyCompatibility) return NOT_CANCELLABLE
-            // Find a field named "cancelled" or "canceled"
+            // Find a field named "cancelled" or "canceled" that is a boolean, and has a backing field.
             type.allMembers.filter { it.name in CANCELLED_NAMES && it.returnType == typeOf<Boolean>() }
-                .filterIsInstance<KMutableProperty1<*, *>>().toList().let {
+                .filterIsInstance<KMutableProperty<*>>().filter { it.javaField != null }.toList().let {
                     if (it.isEmpty()) return NOT_CANCELLABLE
                     if (it.size != 1) config.logger.warn("Multiple possible cancel fields found for event type $type")
-                    OFFSETS[type] = UNSAFE.objectFieldOffset(it[0].javaField)
-                    // This is not using reflection, and it is the same speed as direct access.
+                    it[0].javaField!!.let { field ->
+                        if (Modifier.isStatic(field.modifiers)) OFFSETS[type] = UNSAFE.staticFieldOffset(field)
+                        else OFFSETS[type] = UNSAFE.objectFieldOffset(field)
+                    }
+                    // This is the same speed as direct access, plus one JNI call and hashmap access.
                     // If you are familiar with C, this is essentially the same idea as pointers.
                     return CancelledState { event -> UNSAFE.getBoolean(event, OFFSETS[type]!!) }
                 }

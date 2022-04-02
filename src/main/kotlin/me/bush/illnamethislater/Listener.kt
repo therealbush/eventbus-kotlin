@@ -14,15 +14,15 @@ import kotlin.reflect.KClass
 class Listener @PublishedApi internal constructor(
     listener: (Nothing) -> Unit,
     internal val type: KClass<*>,
-    internal var priority: Int = 0,
-    internal var parallel: Boolean = false,
-    internal var receiveCancelled: Boolean = false
+    internal val priority: Int = 0,
+    internal val parallel: Boolean = false,
+    internal val receiveCancelled: Boolean = false
 ) {
     @Suppress("UNCHECKED_CAST")
     // Generics have no benefit here,
     // it is easier just to force cast.
     internal val listener = listener as (Any) -> Unit
-    internal lateinit var subscriber: Any
+    internal var subscriber: Any? = null
 }
 
 /**

@@ -2,17 +2,15 @@ package me.bush.illnamethislater
 
 import kotlin.reflect.KClass
 
-// TODO: 3/30/2022 Refactor some stuff
-
 /**
- * [A simple event dispatcher](http://github.com/therealbush/eventbus-kotlin)
+ * A simple event dispatcher
+ *
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
  *
  * @author bush
  * @since 1.0.0
  */
-class EventBus(
-    private val config: Config = Config()
-) {
+class EventBus(private val config: Config = Config()) {
     private val listeners = hashMapOf<KClass<*>, ListenerGroup>()
     private val subscribers = mutableSetOf<Any>()
 
@@ -29,25 +27,12 @@ class EventBus(
                     it.subscriber = subscriber
                 })
             }
-            subscribers += subscriber
+            subscribers.add(subscriber)
             true
         }.getOrElse {
             config.logger.error("Unable to register listeners for subscriber $subscriber", it)
             false
         }
-    }
-
-    /**
-     * Registers a listener (which may not belong to any subscriber) to this [EventBus]. If no object
-     * is given, a key will be returned which can be used in [unsubscribe] to remove the listener.
-     *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
-     */
-    fun register(listener: Listener): Listener {
-        listeners.computeIfAbsent(listener.type) {
-            ListenerGroup(it, config)
-        }.add(listener)
-        return listener
     }
 
     /**
@@ -58,10 +43,20 @@ class EventBus(
     fun unsubscribe(subscriber: Any): Boolean {
         return subscribers.remove(subscriber).also { contains ->
             if (contains) listeners.entries.removeIf {
-                it.value.removeFrom(subscriber)
+                it.value.unsubscribe(subscriber)
                 it.value.sequential.isEmpty() && it.value.parallel.isEmpty()
             }
         }
+    }
+
+    /**
+     * Registers a listener (which may not belong to any subscriber) to this [EventBus]. If no object
+     * is given, a key will be returned which can be used in [unsubscribe] to remove the listener.
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     */
+    fun register(listener: Listener) = listener.also {
+        listeners.computeIfAbsent(it.type) { type -> ListenerGroup(type, config) }.register(it)
     }
 
     /**
@@ -69,7 +64,9 @@ class EventBus(
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    fun unregister(listener: Listener) = listeners[listener.type]?.remove(listener) ?: false
+    fun unregister(listener: Listener) = listener.also {
+        listeners[it.type]?.unregister(it)
+    }
 
     /**
      * Posts an event. doc
