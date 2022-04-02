@@ -23,7 +23,7 @@ abstract class Event {
     /**
      * Determines if this event can be [cancelled]. This does not have to return a constant value.
      */
-    abstract val cancellable: Boolean
+    protected abstract val cancellable: Boolean
 
     /**
      * Sets [cancelled] to true.

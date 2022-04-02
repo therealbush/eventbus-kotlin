@@ -4,6 +4,7 @@ import me.bush.illnamethislater.listener
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -42,6 +43,13 @@ class Test {
         eventBus.subscribe(this)
 
         logger.info("Testing Events")
+    }
+
+    @AfterAll
+    fun unsubscribe() {
+        logger.info("Unsubscribing")
+        eventBus.unsubscribe(this)
+        eventBus.debugInfo()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,13 +146,26 @@ class Test {
     // Tests external event cancel state functionality.
     @Test
     fun externalEventListenerTest() {
-
+        var unchanged = "this will not change"
+        // Cancels the event
+        eventBus.register(listener<ExternalEvent>(200) {
+            it.canceled = true
+        })
+        // This shouldn't be called
+        eventBus.register(listener<ExternalEvent>(100) {
+            unchanged = "changed"
+        })
+        eventBus.post(ExternalEvent())
+        Assertions.assertEquals(unchanged, "this will not change")
+        // Tests that duplicates are detected, and that both
+        // "canceled" and "cancelled" are detected as valid fields
+        eventBus.register(listener<ExternalDuplicates> {})
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Tests parallel invocation functionality. todo how will this work with cancellability
+    // Tests parallel invocation functionality.
     @Test
     fun parallelListenerTest() {
 
@@ -156,34 +177,39 @@ class Test {
     // Tests reflection against singleton object classes.
     @Test
     fun objectSubscriberTest() {
-
+        eventBus.subscribe(ObjectSubscriber)
+        eventBus.post(Unit)
+        Assertions.assertTrue(ObjectSubscriber.willChange)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    // todo what else?
+    // todo test thread safety
     // todo ensure boolean functions return proper value (subscribe, unsubscribe, etc)
 }
 
-// todo test changing cancellability
+object ObjectSubscriber {
+    var willChange = false
+
+    fun listener() = listener<Unit> {
+        willChange = true
+    }
+}
+
 class MyEvent : Event() {
     override val cancellable = true
 
     var lastListener = ""
+    var someString = "donda"
 }
 
-class ExternalEvent0 {
+class ExternalEvent {
     var canceled = false
 }
 
-class ExternalEvent1 {
-    var cancelled = false
-}
-
 // Should give us a warning about duplicates
-class ExternalEvent2 {
+class ExternalDuplicates {
     var canceled = false
     var cancelled = false
 }

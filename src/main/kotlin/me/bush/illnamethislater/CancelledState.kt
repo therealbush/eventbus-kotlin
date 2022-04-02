@@ -19,12 +19,14 @@ internal fun interface CancelledState {
 
     /**
      * Returns whether [event] is cancelled or not. [event] should only ever be of the type
-     * that was passed to [CancelledState.of], or this will cause an error.
+     * that was passed to [CancelledState.of], **or this will crash.**
      */
     fun isCancelled(event: Any): Boolean
 
     companion object {
-        private val UNSAFE = Unsafe::class.declaredMembers.single { it.name == "theUnsafe" }.handleCall() as Unsafe
+        private val UNSAFE = runCatching {
+            Unsafe::class.declaredMembers.single { it.name == "theUnsafe" }.handleCall() as Unsafe
+        }.getOrNull() // soy jvm
         private val CANCELLED_NAMES = arrayOf("canceled", "cancelled")
         private val NOT_CANCELLABLE = CancelledState { false }
         private val OFFSETS = hashMapOf<KClass<*>, Long>()
@@ -40,7 +42,7 @@ internal fun interface CancelledState {
             // Find a field named "cancelled" or "canceled" that is a boolean, and has a backing field.
             type.allMembers.filter { it.name in CANCELLED_NAMES && it.returnType == typeOf<Boolean>() }
                 .filterIsInstance<KMutableProperty<*>>().filter { it.javaField != null }.toList().let {
-                    if (it.isEmpty()) return NOT_CANCELLABLE
+                    if (it.isEmpty() || UNSAFE == null) return NOT_CANCELLABLE
                     if (it.size != 1) config.logger.warn("Multiple possible cancel fields found for event type $type")
                     it[0].javaField!!.let { field ->
                         if (Modifier.isStatic(field.modifiers)) OFFSETS[type] = UNSAFE.staticFieldOffset(field)

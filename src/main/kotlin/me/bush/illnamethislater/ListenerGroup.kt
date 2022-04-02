@@ -32,17 +32,9 @@ internal class ListenerGroup(
     /**
      * Removes [listener] from this [ListenerGroup].
      */
-    fun unregister(listener: Listener) {
-        if (listener.parallel) parallel.remove(listener)
+    fun unregister(listener: Listener): Boolean {
+        return if (listener.parallel) parallel.remove(listener)
         else sequential.remove(listener)
-    }
-
-    /**
-     * Removes every listener whose subscriber is [subscriber].
-     */
-    fun unsubscribe(subscriber: Any) {
-        parallel.removeIf { it.subscriber == subscriber }
-        sequential.removeIf { it.subscriber == subscriber }
     }
 
     /**
