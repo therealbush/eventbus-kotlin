@@ -4,7 +4,6 @@ import sun.misc.Unsafe
 import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.javaField
