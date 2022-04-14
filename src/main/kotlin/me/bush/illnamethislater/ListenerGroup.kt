@@ -1,7 +1,6 @@
 package me.bush.illnamethislater
 
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
@@ -23,9 +22,10 @@ internal class ListenerGroup(
      * Adds [listener] to this [ListenerGroup], and sorts its list.
      */
     fun register(listener: Listener) {
-        with(if (listener.parallel) parallel else sequential) {
-            add(listener)
-            sortedByDescending { it.priority }
+        (if (listener.parallel) parallel else sequential).let {
+            if (it.addIfAbsent(listener)) {
+                it.sortedByDescending(Listener::priority)
+            }
         }
     }
 
@@ -41,36 +41,25 @@ internal class ListenerGroup(
      * Posts an event to every listener. Returns true of the event was cancelled.
      */
     fun post(event: Any): Boolean {
-        if (config.parallelFirst) postParallel(event)
         sequential.forEach {
             if (it.receiveCancelled || !cancelledState.isCancelled(event)) {
                 it.listener(event)
             }
         }
-        if (!config.parallelFirst) postParallel(event)
-        return cancelledState.isCancelled(event)
-    }
-
-    /**
-     * Posts an event to all parallel listeners. Cancel state of the event is checked once before
-     * posting the event as opposed to before calling each listener, to avoid inconsistencies.
-     */
-    private fun postParallel(event: Any) {
-        if (parallel.isEmpty()) return
-        // We check this once, because listener order is not consistent
-        val cancelled = cancelledState.isCancelled(event)
-        // Credit to KB for the idea
-        runBlocking(config.parallelContext) {
+        if (parallel.isNotEmpty()) {
+            // We check this once, because listener order is not guaranteed.
+            val cancelled = cancelledState.isCancelled(event)
+            // Credit to KB for the idea
             parallel.forEach {
-                if (it.receiveCancelled || !cancelled) launch {
-                    it.listener(event)
+                if (it.receiveCancelled || !cancelled) {
+                    config.parallelScope.launch {
+                        it.listener(event)
+                    }
                 }
             }
         }
+        return cancelledState.isCancelled(event)
     }
 
-    /**
-     * Logs information about this [ListenerGroup].
-     */
-    fun debugInfo() = config.logger.info("${type.simpleName}: ${sequential.size}, ${parallel.size}")
+    override fun toString() = "${type.simpleName}: ${sequential.size}, ${parallel.size}"
 }

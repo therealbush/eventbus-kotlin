@@ -70,4 +70,4 @@ fun <T : Any> listener(
     // This might introduce some overhead, but its worth
     // not manually having to return "Kotlin.UNIT" from every Java listener.
     listener: Consumer<T>
-) = Listener({ event: T -> listener.accept(event) }, type.kotlin, priority, parallel, receiveCancelled)
+) = Listener(listener::accept, type.kotlin, priority, parallel, receiveCancelled)

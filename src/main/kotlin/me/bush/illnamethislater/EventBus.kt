@@ -1,6 +1,10 @@
 package me.bush.illnamethislater
 
+import kotlinx.coroutines.delay
 import kotlin.reflect.KClass
+import kotlin.reflect.full.companionObject
+import kotlin.reflect.full.companionObjectInstance
+import kotlin.reflect.full.hasAnnotation
 
 /**
  * [A simple event dispatcher.](https://github.com/therealbush/eventbus-kotlin#tododothething)
@@ -13,22 +17,36 @@ class EventBus(private val config: Config = Config()) {
     private val subscribers = hashMapOf<Any, List<Listener>>()
 
     /**
+     * Returns the current count of active subscribers.
+     */
+    val subscriberCount get() = subscribers.size
+
+    /**
+     * Returns the current count of all listeners, regardless of type.
+     */
+    val listenerCount get() = listeners.values.sumOf { it.parallel.size + it.sequential.size }
+
+    /**
      * Searches [subscriber] for members that return [Listener] and registers them.
      *
      * This will not find top level listeners, use [register] instead.
      *
-     * Returns `false` if [subscriber] was already subscribed, `true` otherwise.
+     * Returns `true` if [subscriber] was successfully subscribed,
+     * `false` if it was already subscribed, or could not be.
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
     fun subscribe(subscriber: Any): Boolean {
         return if (subscriber in subscribers) false
         else runCatching {
-            // Register every listener into a group, but also
-            // keep a separate list just for this subscriber.
-            subscribers[subscriber] = subscriber::class.listeners.map { member ->
-                register(member.handleCall(subscriber).also { it.subscriber = subscriber })
-            }.toList()
+            // Keep a separate list just for this subscriber.
+            subscribers[subscriber] = subscriber::class.listeners
+                .filter { !config.annotationRequired || it.hasAnnotation<EventListener>() }.map { member ->
+                    // Register listener to a group.
+                    println("${member.name}, ${member.returnType}")
+                    member.parameters.forEach { println(it) }
+                    register(member.handleCall(subscriber).also { it.subscriber = subscriber })
+                }.toList()
             true
         }.getOrElse {
             config.logger.error("Unable to register listeners for subscriber $subscriber", it)
@@ -41,18 +59,13 @@ class EventBus(private val config: Config = Config()) {
      *
      * This will not remove top level listeners, use [unregister] instead.
      *
-     * Returns `true` if [subscriber] was subscribed, `false` otherwise.
+     * Returns `true` if [subscriber] was subscribed.
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
     fun unsubscribe(subscriber: Any): Boolean {
         val contained = subscriber in subscribers
-        // Unregister every listener for this subscriber,
-        // and return null so the map entry is removed.
-        subscribers.computeIfPresent(subscriber) { _, listeners ->
-            listeners.forEach { unregister(it) }
-            null
-        }
+        subscribers.remove(subscriber)?.forEach { unregister(it) }
         return contained
     }
 
@@ -69,7 +82,7 @@ class EventBus(private val config: Config = Config()) {
     }
 
     /**
-     * Unregisters a [Listener] from this [EventBus].
+     * Unregisters a [Listener] from this [EventBus]. Returns `true` if [Listener] was registered.
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
@@ -115,11 +128,13 @@ class EventBus(private val config: Config = Config()) {
      * String: 3, 0
      */
     fun debugInfo() {
-        config.logger.info("Subscribers: ${subscribers.size}")
+        config.logger.info("Subscribers: ${subscribers.keys.size}")
         val sequential = listeners.values.sumOf { it.sequential.size }
         val parallel = listeners.values.sumOf { it.parallel.size }
         config.logger.info("Listeners: $sequential sequential, $parallel parallel")
-        listeners.values.sortedByDescending { it.sequential.size + it.parallel.size }.forEach { it.debugInfo() }
+        listeners.values.sortedByDescending { it.sequential.size + it.parallel.size }.forEach {
+            config.logger.info(it.toString())
+        }
     }
 }
 

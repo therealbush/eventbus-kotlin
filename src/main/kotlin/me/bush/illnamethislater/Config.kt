@@ -1,5 +1,6 @@
 package me.bush.illnamethislater
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -29,7 +30,7 @@ data class Config(
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    val parallelContext: CoroutineContext = Dispatchers.Default,
+    val parallelScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
 
     /**
      * Whether this [EventBus] should try to find a "cancelled" field in events being listened for that
@@ -40,10 +41,7 @@ data class Config(
     val thirdPartyCompatibility: Boolean = true,
 
     /**
-     * Whether parallel listeners should be called before or after sequential listeners. Parallel listeners
-     * will always finish before sequential listeners are called, or before [EventBus.post] returns.
-     *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * todo doc
      */
-    val parallelFirst: Boolean = true
+    val annotationRequired: Boolean = false
 )
