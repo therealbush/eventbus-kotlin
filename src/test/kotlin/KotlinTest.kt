@@ -7,19 +7,9 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.Test
-import org.opentest4j.AssertionFailedError
-import sun.misc.Unsafe
-import kotlin.jvm.internal.PropertyReference0Impl
+import org.junit.jupiter.api.TestInstance
 import kotlin.random.Random
-import kotlin.reflect.KCallable
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.*
-import kotlin.reflect.javaType
-import kotlin.reflect.jvm.isAccessible
-import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.javaGetter
 
 /**
  * I don't know how to do these....
@@ -33,7 +23,7 @@ class KotlinTest {
     private val logger = LogManager.getLogger("Kotlin Test")
 
     @BeforeAll
-    fun `setup logger and initialize eventbus` () {
+    fun `setup logger and initialize eventbus`() {
         // Log level defaults to only error
         Configurator.setRootLevel(Level.ALL)
         eventBus = EventBus(
@@ -51,7 +41,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test listener priority and ability to cancel events or receive cancelled events` () {
+    fun `test listener priority and ability to cancel events or receive cancelled events`() {
         eventBus.subscribe(this)
         val event = SimpleEvent()
         eventBus.post(event)
@@ -90,7 +80,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test subscribing on a kotlin singleton object` () {
+    fun `test subscribing on a kotlin singleton object`() {
         eventBus.subscribe(ObjectTest)
         val event = SimpleEvent()
         eventBus.post(event)
@@ -102,7 +92,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test primitive types and listeners which don't belong to a class` () {
+    fun `test primitive types and listeners which don't belong to a class`() {
         val random = Random.nextInt()
         var changed = 0
         val listener = listener<Int> {
@@ -118,7 +108,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test that we can detect if an external event is cancelled` () {
+    fun `test that we can detect if an external event is cancelled`() {
         eventBus.subscribe(this)
         val event = ExternalEvent()
         eventBus.post(event)
@@ -139,7 +129,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test parallel event posting` () {
+    fun `test parallel event posting`() {
         runBlocking {
             sus()
         }
@@ -157,7 +147,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `call every method on multiple threads concurrently to ensure no CME is thrown` () {
+    fun `call every method on multiple threads concurrently to ensure no CME is thrown`() {
 
     }
 
@@ -165,7 +155,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test that inheritance doesn't affect events or listeners` () {
+    fun `test that inheritance doesn't affect events or listeners`() {
         val superTest = listener<SimpleEvent> {
             Assertions.fail("This should not be called")
         }
@@ -186,7 +176,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test that require annotation mode works` () {
+    fun `test that require annotation mode works`() {
         val eventBus = EventBus(Config(annotationRequired = true))
         eventBus.subscribe(this)
         eventBus.post(Unit)
@@ -208,7 +198,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test subscribing on a companion object` () {
+    fun `test subscribing on a companion object`() {
         eventBus.subscribe(KotlinTest)
         val string = "i love bush's eventbus <3"
         eventBus.post(string)
@@ -232,9 +222,10 @@ object ObjectTest {
     }
 
     @EventListener
-    private val listener2 get() = listener<SimpleEvent> {
-        it.count++
-    }
+    private val listener2
+        get() = listener<SimpleEvent> {
+            it.count++
+        }
 
     private fun listener3() = listener<SimpleEvent> {
         it.count++

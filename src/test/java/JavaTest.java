@@ -1,14 +1,14 @@
+import me.bush.illnamethislater.EventBus;
 import me.bush.illnamethislater.Listener;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import me.bush.illnamethislater.EventBus;
-import org.apache.logging.log4j.LogManager;
-import org.junit.jupiter.api.Test;
 
 import static me.bush.illnamethislater.ListenerKt.listener;
 
@@ -21,8 +21,20 @@ import static me.bush.illnamethislater.ListenerKt.listener;
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public class JavaTest {
-    private EventBus eventBus;
+    public static Listener someStaticListenerField = listener(SimpleEvent.class, event -> {
+        event.setCount(event.getCount() + 1);
+    });
     private final Logger logger = LogManager.getLogger();
+    public Listener someInstanceListenerField = listener(SimpleEvent.class, event -> {
+        event.setCount(event.getCount() + 1);
+    });
+    private EventBus eventBus;
+
+    public static Listener someStaticListenerMethod() {
+        return listener(SimpleEvent.class, event -> {
+            event.setCount(event.getCount() + 1);
+        });
+    }
 
     @BeforeAll
     public void setup() {
@@ -40,23 +52,9 @@ public class JavaTest {
         Assertions.assertEquals(event.getCount(), 4);
     }
 
-    public Listener someInstanceListenerField = listener(SimpleEvent.class, event -> {
-        event.setCount(event.getCount() + 1);
-    });
-
     public Listener someInstanceListenerMethod() {
         return listener(SimpleEvent.class, event -> {
             event.setCount(event.getCount() + 1);
         });
     }
-
-    public static Listener someStaticListenerMethod() {
-        return listener(SimpleEvent.class, event -> {
-            event.setCount(event.getCount() + 1);
-        });
-    }
-
-    public static Listener someStaticListenerField = listener(SimpleEvent.class, event -> {
-        event.setCount(event.getCount() + 1);
-    });
 }

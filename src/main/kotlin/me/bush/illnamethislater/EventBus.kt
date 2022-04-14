@@ -1,9 +1,6 @@
 package me.bush.illnamethislater
 
-import kotlinx.coroutines.delay
 import kotlin.reflect.KClass
-import kotlin.reflect.full.companionObject
-import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.hasAnnotation
 
 /**

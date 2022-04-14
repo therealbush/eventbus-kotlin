@@ -1,15 +1,13 @@
 package me.bush.illnamethislater
 
-import java.lang.reflect.Modifier
-import kotlin.reflect.*
+import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.isAccessible
-import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.javaGetter
-import kotlin.reflect.jvm.javaMethod
+import kotlin.reflect.typeOf
 
 // by bush, unchanged since 1.0.0
 
