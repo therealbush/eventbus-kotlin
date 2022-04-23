@@ -45,7 +45,7 @@ val dokkaHtmlJar by tasks.register<Jar>("dokkaHtmlJar") {
     archiveClassifier.set("html-doc")
 }
 
-publishing.publications.register<MavenPublication>("library") {
+publishing.publications.create<MavenPublication>("maven") {
     from(components["java"])
     version = project.version as String
     groupId = project.group as String
