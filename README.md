@@ -121,8 +121,8 @@ listener<EventType>(priority = 0, parallel = false, receiveCancelled = false) {
 
 ```java
 listener(EventType.class,0,false,false,event->{
-        ...listener body...
-        });
+    ...listener body...
+});
 ```
 
 Listeners can be registered either directly with `EventBus#register`, or subscribed by returning them from a function or
@@ -147,14 +147,14 @@ fun listener2() = listener<EventType> {
 
 ```java
 public Listener listener0=listener(EventType.class,event->{
-        ...listener body...
-        });
+    ...listener body...
+});
 
 public Listener listener1(){
-        return listener(EventType.class,event->{
+    return listener(EventType.class,event->{
         ...listener body...
-        });
-        }
+    });
+}
 ```
 
 #### priority

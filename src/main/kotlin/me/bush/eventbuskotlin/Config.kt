@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger
 /**
  * A class containing configuration options for an [EventBus].
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-an-eventbus)
  *
  * @author bush
  * @since 1.0.0
@@ -18,7 +18,7 @@ data class Config(
     /**
      * The logger this [EventBus] will use to log errors, or [EventBus.debug]
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#logger)
      */
     val logger: Logger = LOGGER,
 
@@ -28,7 +28,7 @@ data class Config(
      *
      * [What is a Coroutine?](https://kotlinlang.org/docs/coroutines-overview.html)
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#parallelScope)
      */
     val parallelScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
 
@@ -36,7 +36,7 @@ data class Config(
      * Whether this [EventBus] should try to find a "cancelled" field in events being listened for that
      * are not a subclass of [Event]. This is experimental, and should be set to `false` if problems arise.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#thirdpartyCompatibility)
      */
     val thirdPartyCompatibility: Boolean = true,
 
@@ -44,7 +44,7 @@ data class Config(
      * Whether listeners need to be annotated with [EventListener] to be subscribed to this [EventBus].
      * This has no effect on anything else, and is just to improve code readability.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#annotationRequired)
      */
     val annotationRequired: Boolean = false
 )

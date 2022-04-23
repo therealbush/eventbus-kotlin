@@ -21,7 +21,7 @@ class EventBus(private val config: Config = Config()) {
      *
      * This will not find top level members, use [register] instead.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#subscribing-an-object)
      *
      * @return `true` if [subscriber] was successfully subscribed,
      * `false` if it was already subscribed, or could not be.
@@ -37,7 +37,7 @@ class EventBus(private val config: Config = Config()) {
      *
      * This will not remove top level listeners, use [unregister] instead.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#subscribing-an-object)
      *
      * @return `true` if [subscriber] was successfully unsubscribed, `false` if it was not subscribed.
      */
@@ -48,7 +48,7 @@ class EventBus(private val config: Config = Config()) {
     /**
      * Registers a [Listener] to this [EventBus].
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-a-listener)
      */
     fun register(listener: Listener): Boolean = listeners.computeIfAbsent(listener.type) {
         ListenerGroup(it, config)
@@ -57,7 +57,7 @@ class EventBus(private val config: Config = Config()) {
     /**
      * Unregisters a [Listener] from this [EventBus]. Returns `true` if [Listener] was registered.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-a-listener)
      */
     fun unregister(listener: Listener): Boolean = listeners[listener.type]?.let {
         val contained = it.unregister(listener)
@@ -80,7 +80,7 @@ class EventBus(private val config: Config = Config()) {
      * Sequential listeners are called in the order of [Listener.priority], and parallel listeners
      * are called after using [launch]. This method will not wait for parallel listeners to complete.
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#posting-an-event)
      */
     fun post(event: Any): Boolean = listeners[event::class]?.post(event) ?: false
 
@@ -90,7 +90,7 @@ class EventBus(private val config: Config = Config()) {
      *
      * **This may cause a [ConcurrentModificationException] if [register] or [subscribe] is called in parallel.**
      *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin)
      * ```
      * Subscribers: 5
      * Listeners: 8 sequential, 21 parallel

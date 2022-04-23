@@ -72,6 +72,6 @@ internal fun getListeners(subscriber: Any, config: Config) = runCatching {
 /**
  * An annotation that must be used to identify listeners if [Config.annotationRequired] is `true`.
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#annotationRequired)
  */
 annotation class EventListener

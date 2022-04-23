@@ -235,7 +235,7 @@ class KotlinTest {
         eventBus.unsubscribe(this)
     }
 
-    var called = false
+    private var called = false
 
     @EventListener
     val annotation = listener<Unit> {

@@ -1,3 +1,3 @@
 
-rootProject.name = "illnamethislater"
+rootProject.name = "eventbuskotlin"
 

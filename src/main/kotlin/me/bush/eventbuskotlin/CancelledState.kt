@@ -14,8 +14,6 @@ import kotlin.reflect.typeOf
 /**
  * A simple SAM interface for determining if an event (or any class) is cancellable.
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
- *
  * @author bush
  * @since 1.0.0
  */
@@ -24,8 +22,6 @@ internal fun interface CancelledState {
     /**
      * [event] should only ever be of the type that was passed
      * to [CancelledState.invoke], **or this will throw.**
-     *
-     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      *
      * @return `true` if [event] is cancelled, `false` otherwise.
      */
@@ -43,8 +39,6 @@ internal fun interface CancelledState {
 
         /**
          * Creates a [CancelledState] object for events of class [type].
-         *
-         * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
          */
         operator fun invoke(type: KClass<*>, config: Config): CancelledState = CACHE.getOrPut(type) {
             // Default implementation for our event class.
