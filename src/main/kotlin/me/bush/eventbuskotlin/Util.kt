@@ -1,15 +1,15 @@
-package me.bush.illnamethislater
+package me.bush.eventbuskotlin
 
+import org.apache.logging.log4j.LogManager
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
-import kotlin.reflect.full.allSuperclasses
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.full.valueParameters
-import kotlin.reflect.full.withNullability
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 // by bush, unchanged since 1.0.0
+
+internal val LOGGER = LogManager.getLogger("EventBus")
 
 /**
  * Using [KClass.members] only returns public members, and using [KClass.declaredMembers]
@@ -30,7 +30,7 @@ internal val <T : Any> KClass<T>.allMembers
  * or requires certain arguments. (instanceParameter exists, but it will throw if it is an argument)
  * I thought maybe I was using the wrong methods, but apart from KProperty#get, (which is only for
  * properties, and only accepts arguments of type `Nothing` when `T` is star projected or covariant)
- * I could not find any other way to do this, not even on StackOverFlow.
+ * I could not find any other way to do this, not even on StackOverflow.
  *
  * Funny how this solution is 1/10th the lines and always works.
  */
@@ -40,7 +40,7 @@ internal fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
 }
 
 /*
-internal val KCallable<*>.isJvmStatic
+private val KCallable<*>.isJvmStatic
     get() = when (this) {
         is KFunction -> Modifier.isStatic(javaMethod?.modifiers ?: 0)
         is KProperty -> this.javaGetter == null && Modifier.isStatic(javaField?.modifiers ?: 0)
@@ -52,9 +52,26 @@ internal val KCallable<*>.isJvmStatic
  * Finds all members of return type [Listener]. (properties and methods)
  */
 @Suppress("UNCHECKED_CAST") // This cannot fail
-internal inline val KClass<*>.listeners
-    // Force nullability to false, so this will detect listeners in Java
-    // with "!" nullability. Also make sure there are no parameters.
+private inline val KClass<*>.listeners
     get() = allMembers.filter {
+        // Set nullability to false, so this will detect listeners in Java
+        // with "!" nullability. Also make sure there are no parameters.
         it.returnType.withNullability(false) == typeOf<Listener>() && it.valueParameters.isEmpty()
     } as Sequence<KCallable<Listener>>
+
+/**
+ * Finds all listeners in [subscriber].
+ *
+ * @return A list of listeners belonging to [subscriber], or null if an exception is caught.
+ */
+internal fun getListeners(subscriber: Any, config: Config) = runCatching {
+    subscriber::class.listeners.filter { !config.annotationRequired || it.hasAnnotation<EventListener>() }
+        .map { member -> member.handleCall(subscriber).also { it.subscriber = subscriber } }.toList()
+}.onFailure { config.logger.error("Unable to register listeners for subscriber $subscriber", it) }.getOrNull()
+
+/**
+ * An annotation that must be used to identify listeners if [Config.annotationRequired] is `true`.
+ *
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
+ */
+annotation class EventListener

@@ -1,5 +1,5 @@
-import me.bush.illnamethislater.EventBus;
-import me.bush.illnamethislater.Listener;
+import me.bush.eventbuskotlin.Event;import me.bush.eventbuskotlin.EventBus;
+import me.bush.eventbuskotlin.Listener;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,31 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import static me.bush.illnamethislater.ListenerKt.listener;
+import static me.bush.eventbuskotlin.ListenerKt.listener;
 
 /**
- * I was getting NCDFE when trying to load this class
- * from the other test and I don't care enough to fix it.
- *
  * @author bush
  * @since 1.0.0
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public class JavaTest {
-    public static Listener someStaticListenerField = listener(SimpleEvent.class, event -> {
-        event.setCount(event.getCount() + 1);
-    });
     private final Logger logger = LogManager.getLogger();
-    public Listener someInstanceListenerField = listener(SimpleEvent.class, event -> {
-        event.setCount(event.getCount() + 1);
-    });
     private EventBus eventBus;
-
-    public static Listener someStaticListenerMethod() {
-        return listener(SimpleEvent.class, event -> {
-            event.setCount(event.getCount() + 1);
-        });
-    }
 
     @BeforeAll
     public void setup() {
@@ -52,9 +37,23 @@ public class JavaTest {
         Assertions.assertEquals(event.getCount(), 4);
     }
 
+    public Listener someInstanceListenerField = listener(SimpleEvent.class, event -> {
+        event.setCount(event.getCount() + 1);
+    });
+
+    public static Listener someStaticListenerField = listener(SimpleEvent.class, event -> {
+        event.setCount(event.getCount() + 1);
+    });
+
     public Listener someInstanceListenerMethod() {
         return listener(SimpleEvent.class, event -> {
             event.setCount(event.getCount() + 1);
         });
     }
-}
+
+    public static Listener someStaticListenerMethod() {
+        return listener(SimpleEvent.class, event -> {
+            event.setCount(event.getCount() + 1);
+        });
+    }
+ }

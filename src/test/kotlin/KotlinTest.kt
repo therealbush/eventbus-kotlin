@@ -1,7 +1,7 @@
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import me.bush.illnamethislater.*
+import kotlinx.coroutines.launch
+import me.bush.eventbuskotlin.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 /**
@@ -41,7 +42,7 @@ class KotlinTest {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `test listener priority and ability to cancel events or receive cancelled events`() {
+    fun `test priority and ability to cancel events or receive cancelled events`() {
         eventBus.subscribe(this)
         val event = SimpleEvent()
         eventBus.post(event)
@@ -130,25 +131,75 @@ class KotlinTest {
 
     @Test
     fun `test parallel event posting`() {
-        runBlocking {
-            sus()
+        val listeners = mutableListOf<Listener>()
+        repeat(10) {
+            // Not sure what to test
+            listeners += listener<Unit>(parallel = true) {
+                logger.info("Thread:" + Thread.currentThread().name)
+            }
         }
-    }
+        listeners.forEach { eventBus.register(it) }
+        eventBus.post(Unit)
+        listeners.forEach { eventBus.unregister(it) }
 
-    suspend fun sus() {
-        println()
-    }
+        /* I'm not sure what else to test for this, but I'm also not really happy with parallel event posting yet. TODO
 
-    fun sussy() {
-        println()
+           [DefaultDispatcher-worker-5 @coroutine#5] INFO  Kotlin Test - DefaultDispatcher-worker-5 @coroutine#5
+           [DefaultDispatcher-worker-2 @coroutine#2] INFO  Kotlin Test - DefaultDispatcher-worker-2 @coroutine#2
+           [DefaultDispatcher-worker-1 @coroutine#1] INFO  Kotlin Test - DefaultDispatcher-worker-1 @coroutine#1
+           [DefaultDispatcher-worker-4 @coroutine#4] INFO  Kotlin Test - DefaultDispatcher-worker-4 @coroutine#4
+           [DefaultDispatcher-worker-7 @coroutine#7] INFO  Kotlin Test - DefaultDispatcher-worker-7 @coroutine#7
+           [DefaultDispatcher-worker-6 @coroutine#6] INFO  Kotlin Test - DefaultDispatcher-worker-6 @coroutine#6
+           [DefaultDispatcher-worker-8 @coroutine#8] INFO  Kotlin Test - DefaultDispatcher-worker-8 @coroutine#8
+           [DefaultDispatcher-worker-9 @coroutine#9] INFO  Kotlin Test - DefaultDispatcher-worker-9 @coroutine#9
+           [DefaultDispatcher-worker-3 @coroutine#3] INFO  Kotlin Test - DefaultDispatcher-worker-3 @coroutine#3
+         [DefaultDispatcher-worker-10 @coroutine#10] INFO  Kotlin Test - DefaultDispatcher-worker-10 @coroutine#10 */
+
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    fun `call every method on multiple threads concurrently to ensure no CME is thrown`() {
+    fun `test thread safety`() {
+        val listeners = mutableListOf<Listener>()
+        repeat(10) {
+            listeners += listener<Any>(parallel = false) {
+                doStuff()
+            }
+            listeners += listener<Any>(parallel = true) {
+                doStuff()
+            }
+        }
+        listeners.forEach { eventBus.register(it) }
+        eventBus.debug()
+        CoroutineScope(Dispatchers.Default).launch {
+            repeat(100) {
+                launch {
+                    doStuff()
+                    eventBus.post(Any())
+                }
+            }
+        }
+        Thread.sleep(2000)
+        Assertions.assertEquals(2100, counter.get())
+        listeners.forEach { eventBus.unregister(it) }
+        eventBus.unregister(dummy)
+        eventBus.unsubscribe(this)
+        // Should be empty
+        eventBus.debug()
+    }
 
+    private val dummy = listener<Unit> {}
+
+    private var counter = AtomicInteger()
+
+    private fun doStuff() {
+        eventBus.unsubscribe(this)
+        eventBus.subscribe(this)
+        eventBus.unregister(dummy)
+        eventBus.register(dummy)
+        counter.getAndIncrement()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +232,7 @@ class KotlinTest {
         eventBus.subscribe(this)
         eventBus.post(Unit)
         Assertions.assertTrue(called)
+        eventBus.unsubscribe(this)
     }
 
     var called = false

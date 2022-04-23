@@ -1,10 +1,8 @@
-package me.bush.illnamethislater
+package me.bush.eventbuskotlin
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import kotlin.coroutines.CoroutineContext
 
 
 /**
@@ -18,15 +16,17 @@ import kotlin.coroutines.CoroutineContext
 data class Config(
 
     /**
-     * The logger this [EventBus] will use to log errors, or log [EventBus.debugInfo]
+     * The logger this [EventBus] will use to log errors, or [EventBus.debug]
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
-    val logger: Logger = LogManager.getLogger("Eventbus"),
+    val logger: Logger = LOGGER,
 
     /**
-     * The [CoroutineContext] to use when posting events to parallel listeners. The default
-     * value will work just fine, but you can specify a custom context if desired.
+     * The [CoroutineScope] to use when posting events to parallel listeners. The default
+     * value will work just fine, but you can specify a custom scope if desired.
      *
-     * [What is a Coroutine Context?](https://kotlinlang.org/docs/coroutine-context-and-dispatchers.html)
+     * [What is a Coroutine?](https://kotlinlang.org/docs/coroutines-overview.html)
      *
      * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
@@ -41,7 +41,10 @@ data class Config(
     val thirdPartyCompatibility: Boolean = true,
 
     /**
-     * todo doc
+     * Whether listeners need to be annotated with [EventListener] to be subscribed to this [EventBus].
+     * This has no effect on anything else, and is just to improve code readability.
+     *
+     * [Information and examples](https://github.com/therealbush/eventbus-kotlin#tododothething)
      */
     val annotationRequired: Boolean = false
 )
