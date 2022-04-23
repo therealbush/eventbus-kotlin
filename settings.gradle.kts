@@ -1,3 +1,1 @@
-
-rootProject.name = "eventbuskotlin"
-
+rootProject.name = "eventbus-kotlin"
