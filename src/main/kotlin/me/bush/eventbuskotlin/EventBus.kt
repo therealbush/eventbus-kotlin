@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
  * @author bush
  * @since 1.0.0
  */
-class EventBus(private val config: Config = Config()) {
+open class EventBus(private val config: Config = Config()) {
     private val listeners = ConcurrentHashMap<KClass<*>, ListenerGroup>()
     private val subscribers = ConcurrentHashMap.newKeySet<Any>()
     private val cache = ConcurrentHashMap<Any, List<Listener>?>()

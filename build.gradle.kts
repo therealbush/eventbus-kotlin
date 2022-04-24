@@ -14,12 +14,12 @@ repositories.mavenCentral()
 
 dependencies {
     testImplementation(kotlin("test"))
-    
+
     implementation("org.apache.logging.log4j:log4j-core:2.15.0")
 
-    // Additional Kotlin libraries required for some features
     implementation(kotlin("reflect", "1.6.20"))
-    implementation(kotlin("coroutines-core", "1.6.1"))
+    implementation(kotlin("stdlib-jdk8", "1.6.20"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
 }
 
 java {
