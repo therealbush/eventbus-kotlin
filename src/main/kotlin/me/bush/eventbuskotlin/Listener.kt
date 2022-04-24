@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
  * This class is not intended to be used externally, use [listener] instead. You *could* use this,
  * and it would work fine however you would have to specify the type explicitly. (ew!)
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-an-event)
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-a-listener)
  *
  * @author bush
  * @since 1.0.0
@@ -30,7 +30,7 @@ class Listener @PublishedApi internal constructor(
  * or getter belonging to an object to be subscribed with [EventBus.subscribe],
  * or directly registered to an [EventBus] with [EventBus.register].
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-an-event)
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-a-listener)
  *
  * @param T                The **exact** (no inheritance) type of event to listen for.
  * @param priority         The priority of this listener, high to low.
@@ -52,7 +52,7 @@ inline fun <reified T : Any> listener(
  * or getter belonging to an object to be subscribed with [EventBus.subscribe],
  * or directly registered to an [EventBus] with [EventBus.register].
  *
- * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-an-event)
+ * [Information and examples](https://github.com/therealbush/eventbus-kotlin#creating-a-listener)
  *
  * @param type             The **exact** (no inheritance) type of event to listen for.
  * @param priority         The priority of this listener, high to low.
