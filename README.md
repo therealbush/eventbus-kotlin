@@ -1,9 +1,6 @@
-# EVENTBUS
+# EVENTBUS-KOTLIN
 
-<img src="https://tokei.rs/b1/github/therealbush/eventbus-kotlin" alt="lines of code"/> 
-<img src="https://img.shields.io/github/languages/code-size/therealbush/eventbus-kotlin" alt="code size"/> 
-[![](https://jitpack.io/v/therealbush/eventbus-kotlin.svg)](https://jitpack.io/#therealbush/eventbus-kotlin) 
-[![](https://jitpack.io/v/therealbush/eventbus-kotlin/month.svg)](https://jitpack.io/#therealbush/eventbus-kotlin)<br>
+<img src="https://tokei.rs/b1/github/therealbush/eventbus-kotlin" alt="lines of code"/> <img src="https://img.shields.io/github/languages/code-size/therealbush/eventbus-kotlin" alt="code size"/> [![](https://jitpack.io/v/therealbush/eventbus-kotlin.svg)](https://jitpack.io/#therealbush/eventbus-kotlin) [![](https://jitpack.io/v/therealbush/eventbus-kotlin/month.svg)](https://jitpack.io/#therealbush/eventbus-kotlin)<br> 
 
 *A simple, thread safe, and fast event dispatcher for Kotlin/JVM and Java.*
 
