@@ -117,7 +117,7 @@ listener<EventType>(priority = 0, parallel = false, receiveCancelled = false) {
 ```
 
 ```java
-listener(EventType.class,0,false,false,event->{
+listener(EventType.class, 0, false, false, event -> {
     ...listener body...
 });
 ```
@@ -132,10 +132,9 @@ val listener0 = listener<EventType> {
     ...listener body ...
 }
 
-val listener1
-    get() = listener<EventType> {
-        ...listener body ...
-    }
+val listener1 get() = listener<EventType> {
+    ...listener body ...
+}
 
 fun listener2() = listener<EventType> {
     ...listener body ...
@@ -143,12 +142,12 @@ fun listener2() = listener<EventType> {
 ```
 
 ```java
-public Listener listener0=listener(EventType.class,event->{
+public Listener listener0 = listener(EventType.class, event -> {
     ...listener body...
 });
 
-public Listener listener1(){
-    return listener(EventType.class,event->{
+public Listener listener1() {
+    return listener(EventType.class, event -> {
         ...listener body...
     });
 }
