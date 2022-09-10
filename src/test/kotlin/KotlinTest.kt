@@ -85,7 +85,7 @@ class KotlinTest {
         eventBus.subscribe(ObjectTest)
         val event = SimpleEvent()
         eventBus.post(event)
-        Assertions.assertEquals(3, event.count)
+        Assertions.assertEquals(5, event.count)
         eventBus.unsubscribe(ObjectTest)
     }
 
@@ -271,6 +271,16 @@ class KotlinTest {
 object ObjectTest {
     private val listener1 = listener<SimpleEvent> {
         it.count++
+    }
+
+    @EventHandler
+    fun listenerAnnotated(event: SimpleEvent) {
+        event.count++
+    }
+
+    @EventHandler
+    private fun listenerAnnotatedPrivate(event: SimpleEvent) {
+        event.count++
     }
 
     @EventListener

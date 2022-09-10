@@ -153,6 +153,27 @@ public Listener listener1() {
 }
 ```
 
+
+### Creating a Method Listener:
+
+Method Listeners are created by using `@EventHandler` (*not* `@EventListener`) on a function that takes an event and 
+returns `Unit` (or `void` in Java). They can only be registered using `EventBus#subscribe` and *always* require an
+annotation. The listened Event Type is automatically derived from the function signature. As usual, both instance,
+object and (java) static methods are scanned. **Note**: since this internally uses `invokedynamic` and `MethodHandles`,
+greater performance is generally achieved by having these methods `public` instead of `private`.
+
+```kt
+@EventHandler(
+    priority = 0, // Optional
+    receiveCancelled = false, // Optional
+    parallel = false, // Optional
+)
+fun annotatedListener(event: SomeEvent) {
+    /* listener body */
+}
+```
+
+
 #### priority
 
 The priority of this `Listener`. Listeners with a higher priority will receive events before listeners with a lower

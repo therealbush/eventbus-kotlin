@@ -1,10 +1,15 @@
 package me.bush.eventbuskotlin
 
 import org.apache.logging.log4j.LogManager
+import java.lang.invoke.MethodHandles
+import java.lang.reflect.Modifier
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaMethod
+import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
 
 // by bush, unchanged since 1.0.0
@@ -16,7 +21,15 @@ internal val LOGGER = LogManager.getLogger("EventBus")
  * doesn't return inherited members. This returns all members, private and inherited.
  */
 internal val <T : Any> KClass<T>.allMembers
-    get() = (declaredMembers + allSuperclasses.flatMap { it.declaredMembers }).asSequence()
+    get() = (declaredMembers.asSequence() + allSuperclasses.asSequence().flatMap { it.declaredMembers })
+
+/**
+ * Using [KClass.functions] only returns public functions, and using [KClass.declaredFunctions]
+ * doesn't return inherited functions. This returns all functions, private and inherited.
+ */
+internal val <T : Any> KClass<T>.allFunctions
+    get() = declaredFunctions.asSequence() + allSuperclasses.asSequence().flatMap { it.declaredFunctions }
+
 
 /**
  * Checks if a [KCallable] is static on the jvm, and handles invocation accordingly.
@@ -59,14 +72,59 @@ private inline val KClass<*>.listeners
         it.returnType.withNullability(false) == typeOf<Listener>() && it.valueParameters.isEmpty()
     } as Sequence<KCallable<Listener>>
 
+internal fun createMethodListener(config: Config, method: KFunction<*>, subscriber: Any): Listener {
+    val javaMethod = method.javaMethod!! // Since we use MethodHandles, we have to use java instead of kotlin reflection
+    val listenerType = method.valueParameters.single().type.javaType as Class<*>
+    val annotation = method.findAnnotation<EventHandler>() ?: error("Precondition failed")
+    if (javaMethod.modifiers and Modifier.PUBLIC == 0) {
+        config.logger.warn("Cannot add listener to non-public method $javaMethod using MethodHandles, using slower Reflection instead")
+        javaMethod.isAccessible = true
+        val receiver = if (javaMethod.modifiers and Modifier.STATIC == 0) {
+            subscriber
+        } else {
+            null
+        }
+        return Listener(
+            type = listenerType.kotlin,
+            priority = annotation.priority,
+            parallel = annotation.parallel,
+            receiveCancelled = annotation.receiveCancelled,
+            listener = ({ it: Any ->
+                javaMethod.invoke(receiver, it)
+            })
+        )
+    }
+    // Method handle lookup can still fail when using invalid Java 9 module configurations,
+    // but we cannot help that with reflection either so we might as well fail using MethodHandles.
+    val handles = MethodHandles.lookup()
+    var handle = handles.unreflect(javaMethod)
+    if (javaMethod.modifiers and Modifier.STATIC == 0) {
+        handle = handle.bindTo(subscriber)
+    }
+    return Listener(
+        type = listenerType.kotlin,
+        priority = annotation.priority,
+        parallel = annotation.parallel,
+        receiveCancelled = annotation.receiveCancelled,
+        listener = ({ it: Any ->
+            handle.invoke(it)
+        })
+    )
+}
+
 /**
  * Finds all listeners in [subscriber].
  *
  * @return A list of listeners belonging to [subscriber], or null if an exception is caught.
  */
 internal fun getListeners(subscriber: Any, config: Config) = runCatching {
-    subscriber::class.listeners.filter { !config.annotationRequired || it.hasAnnotation<EventListener>() }
-        .map { member -> member.handleCall(subscriber).also { it.subscriber = subscriber } }.toList()
+    subscriber::class.listeners
+        .filter { !config.annotationRequired || it.hasAnnotation<EventListener>() }
+        .map { member -> member.handleCall(subscriber).also { it.subscriber = subscriber } }.toList() +
+            subscriber::class.allFunctions
+                .filter { it.returnType == typeOf<Unit>() && it.hasAnnotation<EventHandler>() && it.valueParameters.size == 1 && it.javaMethod != null }
+                .map { m -> createMethodListener(config, m, subscriber).also { it.subscriber = subscriber } }
+                .toList()
 }.onFailure { config.logger.error("Unable to register listeners for subscriber $subscriber", it) }.getOrNull()
 
 /**
@@ -75,3 +133,16 @@ internal fun getListeners(subscriber: Any, config: Config) = runCatching {
  * [Information and examples](https://github.com/therealbush/eventbus-kotlin#annotationRequired)
  */
 annotation class EventListener
+
+/**
+ * An annotation that must be used to identify method listeners.
+ *
+ * The annotated method will automatically be converted to a [Listener] using [MethodHandles], if available,
+ * or using slower reflective access otherwise.
+ */
+@Target(AnnotationTarget.FUNCTION)
+annotation class EventHandler(
+    val priority: Int = 0,
+    val parallel: Boolean = false,
+    val receiveCancelled: Boolean = false
+)

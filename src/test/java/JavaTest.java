@@ -1,4 +1,6 @@
-import me.bush.eventbuskotlin.Event;import me.bush.eventbuskotlin.EventBus;
+import me.bush.eventbuskotlin.EventBus;
+import me.bush.eventbuskotlin.EventHandler;
+import me.bush.eventbuskotlin.EventListener;
 import me.bush.eventbuskotlin.Listener;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +36,7 @@ public class JavaTest {
         eventBus.subscribe(this);
         SimpleEvent event = new SimpleEvent();
         eventBus.post(event);
-        Assertions.assertEquals(event.getCount(), 4);
+        Assertions.assertEquals(8, event.getCount());
     }
 
     public Listener someInstanceListenerField = listener(SimpleEvent.class, event -> {
@@ -56,4 +58,24 @@ public class JavaTest {
             event.setCount(event.getCount() + 1);
         });
     }
- }
+
+    @EventHandler
+    public void someAnnotatedListenerMethod(SimpleEvent event) {
+        event.setCount(event.getCount() + 1);
+    }
+
+    @EventHandler
+    private void somePrivateAnnotatedListenerMethod(SimpleEvent event) {
+        event.setCount(event.getCount() + 1);
+    }
+
+    @EventHandler
+    public static void someStaticAnnotatedListenerMethod(SimpleEvent event) {
+        event.setCount(event.getCount() + 1);
+    }
+
+    @EventHandler
+    private static void someStaticPrivateAnnotatedListenerMethod(SimpleEvent event) {
+        event.setCount(event.getCount() + 1);
+    }
+}
